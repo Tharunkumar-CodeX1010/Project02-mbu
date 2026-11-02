@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import movie_card, empty_state with context %}
+{% block title %}Discover Movies · MovieScope{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">Catalogue</span>
+    <h1>Discover movies</h1>
+    <p>Search the full collection, combine filters, and sort by what matters to you.</p>
+  </div>
+  <span class="count-pill"><i class="bi bi-film"></i> {{ movies|length }} movie{{ '' if movies|length == 1 else 's' }}</span>
+</div>
+
+<form class="filter-panel" method="get" action="{{ url_for('movies.discover') }}" id="filterForm">
+  <div class="filter-search">
+    <i class="bi bi-search" aria-hidden="true"></i>
+    <input
+      type="search"
+      name="q"
+      id="discoverSearch"
+      class="form-control"
+      value="{{ search }}"
+      placeholder="Search by title…"
+      aria-label="Search by title"
+    >
+    <button class="filter-search-btn" type="submit" aria-label="Search">
+      <i class="bi bi-arrow-return-left"></i>
+    </button>
+  </div>
+
+  <div class="filter-select">
+    <label for="genreFilter">Genre</label>
+    <select class="form-select js-auto-submit" id="genreFilter" name="genre">
+      <option value="">All genres</option>
+      {% for genre in genres %}
+        <option value="{{ genre }}" {{ 'selected' if genre == selected_genre }}>{{ genre }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="filter-select">
+    <label for="yearFilter">Release year</label>
+    <select class="form-select js-auto-submit" id="yearFilter" name="year">
+      <option value="">Any year</option>
+      {% for year in years %}
+        <option value="{{ year }}" {{ 'selected' if year == selected_year }}>{{ year }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="filter-select">
+    <label for="sortFilter">Sort by</label>
+    <select class="form-select js-auto-submit" id="sortFilter" name="sort">
+      {% for value, label in sort_options %}
+        <option value="{{ value }}" {{ 'selected' if value == sort }}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <a class="btn btn-soft filter-reset" href="{{ url_for('movies.discover') }}"><i class="bi bi-arrow-counterclockwise"></i> Reset</a>
+</form>
+
+{% if search or selected_genre or selected_year %}
+  <div class="active-filters">
+    <span class="active-filters-label">Active filters:</span>
+    {% if search %}<span class="filter-chip"><i class="bi bi-search"></i> “{{ search }}”</span>{% endif %}
+    {% if selected_genre %}<span class="filter-chip"><i class="bi bi-tag"></i> {{ selected_genre }}</span>{% endif %}
+    {% if selected_year %}<span class="filter-chip"><i class="bi bi-calendar3"></i> {{ selected_year }}</span>{% endif %}
+    <a class="clear-filters" href="{{ url_for('movies.discover') }}">Clear all</a>
+  </div>
+{% endif %}
+
+{% if movies %}
+  <div class="movie-grid">
+    {% for movie in movies %}
+      {{ movie_card(movie, eager=loop.index <= 4) }}
+    {% endfor %}
+  </div>
+{% else %}
+  {{ empty_state(
+      'No movies match those filters',
+      'Try a different title, genre or release year — or clear the filters to see the full catalogue.',
+      'search',
+      url_for('movies.discover'),
+      'Clear filters'
+  ) }}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import poster, stars, movie_card, section_header with context %}
+{% block title %}{{ movie.title }} · MovieScope{% endblock %}
+
+{% block content %}
+<a class="back-link" href="{{ url_for('movies.discover') }}"><i class="bi bi-arrow-left"></i> Back to discover</a>
+
+<section class="detail-hero panel">
+  <div class="detail-poster">
+    {{ poster(movie, 'detail-poster-img', eager=True) }}
+    <span class="detail-poster-rating"><i class="bi bi-star-fill"></i> {{ movie.avg_rating|rating }}</span>
+  </div>
+
+  <div class="detail-info">
+    <span class="eyebrow">Movie details</span>
+    <h1>{{ movie.title }}</h1>
+    <div class="detail-meta">
+      <span class="meta-chip"><i class="bi bi-calendar3"></i> {{ movie.release_year }}</span>
+      <span class="meta-chip"><i class="bi bi-tag"></i> {{ movie.genre }}</span>
+      <span class="meta-chip"><i class="bi bi-people"></i> {{ movie.rating_count }} rating{{ '' if movie.rating_count == 1 else 's' }}</span>
+    </div>
+
+    <div class="detail-score-line">
+      <span class="detail-score">{{ movie.avg_rating|rating }}</span>
+      <span class="detail-score-denom">/ 10</span>
+      {{ stars(movie.avg_rating) }}
+      <span class="muted">
+        {% if movie.rating_count %}
+          Community average from {{ movie.rating_count }} rating{{ '' if movie.rating_count == 1 else 's' }}
+        {% else %}
+          No ratings yet — be the first
+        {% endif %}
+      </span>
+    </div>
+
+    <div class="detail-facts">
+      <div class="detail-fact">
+        <span>Release year</span>
+        <strong>{{ movie.release_year }}</strong>
+      </div>
+      <div class="detail-fact">
+        <span>Genre</span>
+        <strong>{{ movie.genre }}</strong>
+      </div>
+      <div class="detail-fact">
+        <span>Average score</span>
+        <strong>{{ movie.avg_rating|rating }} / 10</strong>
+      </div>
+      <div class="detail-fact">
+        <span>Your rating</span>
+        <strong>{{ user_rating.rating ~ ' / 10' if user_rating else 'Not rated' }}</strong>
+      </div>
+    </div>
+
+    <div class="detail-actions">
+      <a class="btn btn-brand" href="#rate"><i class="bi bi-star"></i> {{ 'Update your rating' if user_rating else 'Rate this movie' }}</a>
+      <a class="btn btn-ghost" href="{{ url_for('recommendations.index') }}">Find similar picks <i class="bi bi-stars"></i></a>
+    </div>
+  </div>
+</section>
+
+<div class="row g-4 mt-0">
+  <div class="col-lg-7">
+    <section class="panel h-100" id="ratings">
+      {{ section_header('Rating breakdown', 'How the community scored this movie', 'bar-chart', 'blue') }}
+      <div class="rating-overview">
+        <div class="rating-big">
+          <span>{{ movie.avg_rating|rating }}</span>
+          <small>/10</small>
+        </div>
+        <div class="rating-overview-copy">
+          {{ stars(movie.avg_rating) }}
+          <p>{{ distribution_total }} rating{{ '' if distribution_total == 1 else 's' }} in total</p>
+        </div>
+      </div>
+
+      {% if distribution_total %}
+        <div class="distribution-list">
+          {% for row in distribution %}
+            <div class="distribution-row">
+              <span class="dist-score">{{ row.score }}</span>
+              <div class="dist-track">
+                <span class="dist-fill {{ 'is-high' if row.score >= 9 }}" style="width: {{ row.bar_width }}%"></span>
+              </div>
+              <span class="dist-count">{{ row.count }}</span>
+            </div>
+          {% endfor %}
+        </div>
+        <p class="form-hint">Each bar is scaled to the most common score. Counts are shown on the right.</p>
+      {% else %}
+        <div class="empty-state compact">
+          <span class="empty-icon small"><i class="bi bi-bar-chart"></i></span>
+          <h3>No ratings yet</h3>
+          <p>Your score can start the distribution for this movie.</p>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="col-lg-5">
+    <section class="panel h-100 rate-panel" id="rate">
+      {{ section_header('Rate this movie', 'One rating per account — submit again to update', 'star', 'gold') }}
+
+      {% if user_rating %}
+        <div class="your-rating-banner">
+          <span class="your-rating-icon"><i class="bi bi-check-circle-fill"></i></span>
+          <span>You rated this <strong>{{ user_rating.rating }}/10</strong> on {{ user_rating.rated_at|datefmt('%d %b %Y') }}.</span>
+        </div>
+      {% else %}
+        <div class="your-rating-banner is-empty">
+          <span class="your-rating-icon"><i class="bi bi-info-circle"></i></span>
+          <span>You haven’t rated this movie yet. Pick a score from 1 to 10.</span>
+        </div>
+      {% endif %}
+
+      <form method="post" action="{{ url_for('ratings.rate_movie', movie_id=movie.movie_id) }}">
+        <fieldset class="rating-fieldset">
+          <legend>Your score</legend>
+          <div class="rating-scale">
+            {% for score in range(1, 11) %}
+              <input
+                class="rating-input"
+                type="radio"
+                id="score-{{ score }}"
+                name="rating"
+                value="{{ score }}"
+                {{ 'checked' if user_rating and user_rating.rating == score }}
+                required
+              >
+              <label class="rating-chip" for="score-{{ score }}" title="{{ score }} out of 10">{{ score }}</label>
+            {% endfor %}
+          </div>
+          <div class="rating-scale-labels">
+            <span>Not for me</span>
+            <span>Masterpiece</span>
+          </div>
+        </fieldset>
+        <button class="btn btn-brand w-100" type="submit">
+          <i class="bi bi-star-fill"></i> {{ 'Update my rating' if user_rating else 'Submit my rating' }}
+        </button>
+        <p class="form-hint">Scores are validated on the server. Updating a rating replaces your earlier score — it never creates a duplicate.</p>
+      </form>
+    </section>
+  </div>
+</div>
+
+{% if similar %}
+  <section class="mt-4">
+    {{ section_header('More like this', 'Content similarity based on title and genre (TF-IDF)', 'shuffle', 'violet') }}
+    <div class="movie-grid movie-grid--four">
+      {% for item in similar %}
+        {{ movie_card(item, explanation=item.explanation) }}
+      {% endfor %}
+    </div>
+  </section>
+{% endif %}
+{% endblock %}

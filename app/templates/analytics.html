@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import stat_card, section_header, empty_state with context %}
+{% block title %}Analytics · MovieScope{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">Insights</span>
+    <h1>Analytics</h1>
+    <p>Every chart below is generated from live MySQL data with Pandas, NumPy and Matplotlib.</p>
+  </div>
+  <span class="count-pill count-pill--blue"><i class="bi bi-activity"></i> {{ stats.total_ratings }} ratings analysed</span>
+</div>
+
+<section class="stat-grid">
+  {{ stat_card('Total ratings', stats.total_ratings, 'star-fill', 'gold', 'Every row in the ratings table') }}
+  {{ stat_card('Average rating', (stats.average_rating|rating) ~ ' / 10', 'graph-up-arrow', 'blue', 'Overall catalogue mean (C)') }}
+  {{ stat_card('Best genre', best_genre.genre if best_genre else '—', 'trophy', 'mint', ((best_genre.avg_rating|rating) ~ ' average') if best_genre else 'No ratings yet') }}
+  {{ stat_card('Movies tracked', stats.total_movies, 'film', 'violet', stats.total_genres ~ ' genres represented') }}
+</section>
+
+<div class="analytics-note">
+  <i class="bi bi-info-circle"></i>
+  <span><strong>How to read this:</strong> rating volume matters. The Bayesian weighted score uses <code>m = 10</code> so a movie with three perfect ratings does not outrank a consistently strong movie with dozens of ratings.</span>
+</div>
+
+<div class="chart-grid">
+  {% for chart in chart_cards %}
+    <section class="panel chart-card">
+      <div class="chart-card-head">
+        <div class="d-flex align-items-center gap-3">
+          <span class="section-icon tone-{{ chart.tone }}"><i class="bi bi-{{ chart.icon }}"></i></span>
+          <div>
+            <h2>{{ chart.title }}</h2>
+            <p>{{ chart.subtitle }}</p>
+          </div>
+        </div>
+        <span class="chart-source"><i class="bi bi-database"></i> Live</span>
+      </div>
+      <img
+        class="chart-img"
+        src="{{ url_for('analytics.chart', name=chart.name) }}"
+        alt="{{ chart.title }} chart generated from the MovieScope database"
+        loading="lazy"
+      >
+      <p class="chart-caption">{{ chart.caption }}</p>
+    </section>
+  {% endfor %}
+</div>
+
+<div class="row g-4 mt-0">
+  <div class="col-xl-7">
+    <section class="panel h-100">
+      {{ section_header('Top-rated movies', 'Ranked by average score with at least three ratings', 'trophy', 'gold') }}
+      {% if top_rows %}
+        <div class="table-responsive">
+          <table class="table app-table align-middle mb-0">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Movie</th>
+                <th scope="col">Genre</th>
+                <th scope="col" class="text-end">Avg</th>
+                <th scope="col" class="text-end">Ratings</th>
+                <th scope="col" class="text-end">Weighted</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in top_rows %}
+                <tr>
+                  <td><span class="rank-chip {{ 'rank-chip--top' if loop.index <= 3 }}">{{ loop.index }}</span></td>
+                  <td>
+                    <a class="table-movie" href="{{ url_for('movies.detail', movie_id=row.movie_id) }}">{{ row.title }}</a>
+                    <small>{{ row.release_year }}</small>
+                  </td>
+                  <td><span class="genre-chip">{{ row.genre }}</span></td>
+                  <td class="text-end"><strong>{{ row.avg_rating|rating }}</strong></td>
+                  <td class="text-end">{{ row.rating_count }}</td>
+                  <td class="text-end"><span class="weighted-chip">{{ row.weighted_score|rating }}</span></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        {{ empty_state('No rankings yet', 'Add some ratings to build the leaderboard.', 'trophy') }}
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="col-xl-5">
+    <section class="panel h-100">
+      {{ section_header('Most-rated movies', 'Where rating volume is highest', 'people', 'blue') }}
+      {% if most_rows %}
+        <ol class="ranking-list">
+          {% for row in most_rows[:8] %}
+            <li>
+              <span class="ranking-position">{{ loop.index }}</span>
+              <a class="ranking-copy" href="{{ url_for('movies.detail', movie_id=row.movie_id) }}">
+                <strong>{{ row.title }}</strong>
+                <small>{{ row.genre }} · {{ row.release_year }}</small>
+              </a>
+              <span class="ranking-value">{{ row.rating_count }}<small>ratings</small></span>
+            </li>
+          {% endfor %}
+        </ol>
+      {% else %}
+        {{ empty_state('No rating volume yet', 'Ratings will appear here once users start scoring movies.', 'people') }}
+      {% endif %}
+    </section>
+  </div>
+</div>
+
+<div class="analytics-formula">
+  <div>
+    <span class="eyebrow">Bayesian weighted rating</span>
+    <p><code>WR = (v / (v + m)) × R + (m / (v + m)) × C</code></p>
+  </div>
+  <p>R = movie average · v = rating count · m = 10 minimum ratings · C = overall catalogue average ({{ stats.average_rating|rating }}/10).</p>
+</div>
+{% endblock %}

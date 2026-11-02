@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import movie_card, section_header, empty_state with context %}
+{% block title %}Recommendations · MovieScope{% endblock %}
+
+{% block content %}
+<section class="recommendation-hero">
+  <div class="recommendation-hero-copy">
+    <span class="pill pill-violet"><i class="bi bi-stars"></i> Explainable picks</span>
+    <h1>Recommendations with a reason.</h1>
+    <p>Popular titles use a Bayesian weighted score. Personal picks use TF-IDF content similarity, seeded by the films you rated highly. Already-rated movies stay out of the way.</p>
+    <div class="hero-actions">
+      <a class="btn btn-brand" href="{{ url_for('movies.discover') }}"><i class="bi bi-compass"></i> Rate more movies</a>
+      <a class="btn btn-ghost" href="{{ url_for('ratings.my_ratings') }}">Review my ratings <i class="bi bi-arrow-right"></i></a>
+    </div>
+  </div>
+  <div class="rec-stat-grid">
+    <div class="rec-stat">
+      <span class="rec-stat-icon tone-violet"><i class="bi bi-person-hearts"></i></span>
+      <span class="rec-stat-value">{{ summary.total if summary else 0 }}</span>
+      <span class="rec-stat-label">Movies you’ve rated</span>
+    </div>
+    <div class="rec-stat">
+      <span class="rec-stat-icon tone-gold"><i class="bi bi-star"></i></span>
+      <span class="rec-stat-value">{{ summary.average_given|rating if summary else '—' }}</span>
+      <span class="rec-stat-label">Your average score</span>
+    </div>
+    <div class="rec-stat">
+      <span class="rec-stat-icon tone-mint"><i class="bi bi-tag"></i></span>
+      <span class="rec-stat-value">{{ genre_result.genre or '—' }}</span>
+      <span class="rec-stat-label">Your strongest genre</span>
+    </div>
+  </div>
+</section>
+
+<section class="panel genre-selector-panel">
+  <div class="genre-selector-head">
+    <div>
+      <h2>Explore a genre</h2>
+      <p>Choose a genre, or let MovieScope pick the one you rate highest.</p>
+    </div>
+    {% if not selected_genre %}
+      <span class="tone-note"><i class="bi bi-magic"></i> Auto-selected: <strong>{{ genre_result.genre or '—' }}</strong></span>
+    {% endif %}
+  </div>
+  <div class="genre-pills">
+    <a class="genre-pill {{ 'active' if not selected_genre }}" href="{{ url_for('recommendations.index') }}">Auto · my taste</a>
+    {% for genre in genres %}
+      <a class="genre-pill {{ 'active' if selected_genre == genre }}" href="{{ url_for('recommendations.index', genre=genre) }}">{{ genre }}</a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="recommendation-section">
+  {{ section_header('Picked for you', 'Content similarity seeded by your highest ratings', 'person-hearts', 'violet') }}
+  {% if for_you %}
+    <div class="movie-grid movie-grid--four">
+      {% for item in for_you %}
+        {{ movie_card(item, explanation=item.explanation, reason=item.reason) }}
+      {% endfor %}
+    </div>
+  {% elif summary and summary.total %}
+    {{ empty_state(
+        'No fresh content matches yet',
+        'You have already rated the closest matches. Rate a few more titles to widen your similarity profile.',
+        'stars',
+        url_for('movies.discover'),
+        'Discover more movies'
+    ) }}
+  {% else %}
+    {{ empty_state(
+        'Personal picks unlock after a few ratings',
+        'Rate at least one movie and MovieScope will compare titles and genres to find your next watch.',
+        'star',
+        url_for('movies.discover'),
+        'Rate your first movie'
+    ) }}
+  {% endif %}
+</section>
+
+<section class="recommendation-section">
+  {{ section_header('Popular now', 'Bayesian weighted rating — quality balanced with rating volume', 'fire', 'coral') }}
+  {% if popular %}
+    <div class="movie-grid">
+      {% for item in popular %}
+        {{ movie_card(item, explanation=item.explanation, reason=item.reason) }}
+      {% endfor %}
+    </div>
+  {% else %}
+    {{ empty_state(
+        'No popular picks available',
+        'Every popular movie has already been rated by you, or there are no ratings yet.',
+        'fire',
+        url_for('movies.discover'),
+        'Browse movies'
+    ) }}
+  {% endif %}
+</section>
+
+<section class="recommendation-section">
+  {{ section_header('Top rated', 'The highest averages, with a minimum rating count', 'trophy', 'gold') }}
+  {% if top_rated %}
+    <div class="movie-grid movie-grid--four">
+      {% for item in top_rated %}
+        {{ movie_card(item, explanation=item.explanation, reason=item.reason) }}
+      {% endfor %}
+    </div>
+  {% else %}
+    {{ empty_state(
+        'Nothing new in the top-rated list',
+        'Try another genre or rate more movies so we can refresh your suggestions.',
+        'trophy',
+        url_for('recommendations.index'),
+        'Refresh recommendations'
+    ) }}
+  {% endif %}
+</section>
+
+<section class="recommendation-section">
+  {{ section_header(
+      'Because you like ' ~ (genre_result.genre or 'great films'),
+      ('Auto-selected from your rating history' if genre_result.auto_selected else 'Your selected genre') ~ ' · genre-based ranking',
+      'tag',
+      'mint'
+  ) }}
+  {% if genre_result.movies %}
+    <div class="movie-grid movie-grid--four">
+      {% for item in genre_result.movies %}
+        {{ movie_card(item, explanation=item.explanation, reason=item.reason) }}
+      {% endfor %}
+    </div>
+  {% else %}
+    {{ empty_state(
+        'No unrated movies in ' ~ (genre_result.genre or 'this genre'),
+        'You may have rated every title here. Pick another genre above to keep exploring.',
+        'tags',
+        url_for('recommendations.index'),
+        'Choose another genre'
+    ) }}
+  {% endif %}
+</section>
+{% endblock %}

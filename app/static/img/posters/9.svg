@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 900" width="600" height="900" role="img" aria-label="Dune: Part Two poster">
+  <defs>
+    <linearGradient id="bg9" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#132F55"/>
+      <stop offset="1" stop-color="#3978CE"/>
+    </linearGradient>
+    <linearGradient id="fade9" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#071F27" stop-opacity="0"/>
+      <stop offset="1" stop-color="#071F27" stop-opacity="0.82"/>
+    </linearGradient>
+    <pattern id="grain9" width="6" height="6" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="0.7" fill="#FFFFFF" opacity="0.10"/>
+    </pattern>
+  </defs>
+
+  <rect width="600" height="900" fill="url(#bg9)"/>
+  <circle cx="500" cy="150" r="210" fill="#FFFFFF" opacity="0.07"/>
+  <circle cx="90" cy="360" r="130" fill="#FFFFFF" opacity="0.05"/>
+  <path d="M-60 640 L420 -80 L540 -80 L60 640 Z" fill="#FFFFFF" opacity="0.04"/>
+  <rect width="600" height="900" fill="url(#grain9)"/>
+
+  <g opacity="0.9" fill="#FFFFFF">
+    <rect x="56" y="64" width="74" height="12" rx="6"/>
+    <rect x="56" y="88" width="46" height="7" rx="3.5" opacity="0.65"/>
+  </g>
+
+  <g transform="translate(56 140)" opacity="0.95">
+    <rect width="116" height="116" rx="28" fill="#FFFFFF" opacity="0.14"/>
+    <g fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M28 48h60v40a8 8 0 0 1-8 8H36a8 8 0 0 1-8-8V48Z" fill="#FFFFFF" opacity="0.92" stroke="none"/>
+      <path d="M28 48h60" stroke="#087F69" stroke-width="4" opacity="0.35"/>
+      <path d="M34 48 42 30l14 6 12-6 12 18" />
+    </g>
+    <circle cx="46" cy="68" r="4" fill="#087F69"/>
+    <circle cx="62" cy="68" r="4" fill="#087F69"/>
+    <circle cx="78" cy="68" r="4" fill="#087F69"/>
+  </g>
+
+  <g fill="#FFFFFF" opacity="0.72">
+    <rect x="56" y="300" width="120" height="6" rx="3"/>
+    <rect x="56" y="318" width="78" height="6" rx="3" opacity="0.7"/>
+  </g>
+
+  <rect y="560" width="600" height="340" fill="url(#fade9)"/>
+
+  <g font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" fill="#FFFFFF">
+    <text x="56" y="692" font-size="56" font-weight="700" letter-spacing="-1"><tspan x="56" dy="0">Dune: Part Two</tspan></text>
+    <text x="56" y="812" font-size="24" font-weight="600" opacity="0.78">Sci-Fi · 2024</text>
+  </g>
+
+  <g transform="translate(56 846)">
+    <rect width="152" height="26" rx="13" fill="#FFFFFF" opacity="0.16"/>
+    <text x="14" y="18" font-family="'Segoe UI', Arial, sans-serif" font-size="13" font-weight="700" fill="#FFFFFF" opacity="0.9">MovieScope pick</text>
+  </g>
+
+  <g stroke="#FFFFFF" stroke-width="2" opacity="0.28">
+    <path d="M-10 40 H10 M-10 70 H10 M-10 100 H10 M-10 130 H10 M-10 160 H10 M-10 190 H10 M-10 220 H10 M-10 250 H10 M-10 280 H10 M-10 310 H10 M-10 340 H10 M-10 370 H10 M-10 400 H10 M-10 430 H10 M-10 460 H10 M-10 490 H10 M-10 520 H10 M-10 550 H10 M-10 580 H10 M-10 610 H10 M-10 640 H10 M-10 670 H10 M-10 700 H10 M-10 730 H10 M-10 760 H10 M-10 790 H10 M-10 820 H10 M-10 850 H10 M-10 880 H10"/>
+    <path d="M590 40 H610 M590 70 H610 M590 100 H610 M590 130 H610 M590 160 H610 M590 190 H610 M590 220 H610 M590 250 H610 M590 280 H610 M590 310 H610 M590 340 H610 M590 370 H610 M590 400 H610 M590 430 H610 M590 460 H610 M590 490 H610 M590 520 H610 M590 550 H610 M590 580 H610 M590 610 H610 M590 640 H610 M590 670 H610 M590 700 H610 M590 730 H610 M590 760 H610 M590 790 H610 M590 820 H610 M590 850 H610 M590 880 H610"/>
+  </g>
+</svg>

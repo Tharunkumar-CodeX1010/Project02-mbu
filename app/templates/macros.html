@@ -1,0 +1,93 @@
+{% macro poster(movie, class_name='movie-poster', eager=False) -%}
+  {% set fallback = url_for('static', filename='img/posters/' ~ movie.movie_id ~ '.svg') %}
+  <img
+    src="{{ movie.poster_url or fallback }}"
+    data-fallback="{{ fallback }}"
+    onerror="if(!this.dataset.stage){this.dataset.stage='1';this.src=this.dataset.fallback;}else{this.onerror=null;this.src='{{ url_for('static', filename='img/poster-fallback.svg') }}';}"
+    class="{{ class_name }}"
+    alt="Poster for {{ movie.title }}"
+    {% if not eager %}loading="lazy"{% endif %}
+  >
+{%- endmacro %}
+
+{% macro stars(value, show_value=False) -%}
+  <span class="stars" aria-label="Rated {{ value|rating }} out of 10">
+    {% set half = value|float(0) / 2 %}
+    {% for i in range(5) %}
+      {% if half >= i + 1 %}
+        <i class="bi bi-star-fill"></i>
+      {% elif half >= i + 0.5 %}
+        <i class="bi bi-star-half"></i>
+      {% else %}
+        <i class="bi bi-star"></i>
+      {% endif %}
+    {% endfor %}
+    {% if show_value %}<span class="stars-value">{{ value|rating }}</span>{% endif %}
+  </span>
+{%- endmacro %}
+
+{% macro stat_card(label, value, icon, tone='mint', hint='') -%}
+  <div class="stat-card">
+    <div class="d-flex align-items-start justify-content-between gap-3">
+      <div>
+        <p class="stat-label">{{ label }}</p>
+        <p class="stat-value">{{ value }}</p>
+      </div>
+      <span class="stat-icon tone-{{ tone }}"><i class="bi bi-{{ icon }}"></i></span>
+    </div>
+    {% if hint %}<p class="stat-hint">{{ hint }}</p>{% endif %}
+  </div>
+{%- endmacro %}
+
+{% macro movie_card(movie, explanation=None, reason=None, eager=False) -%}
+  <article class="movie-card">
+    <a class="movie-poster-wrap" href="{{ url_for('movies.detail', movie_id=movie.movie_id) }}" aria-label="View {{ movie.title }}">
+      {{ poster(movie, eager=eager) }}
+      <span class="rating-badge"><i class="bi bi-star-fill"></i> {{ movie.avg_rating|rating }}</span>
+      {% if movie.rating_count == 0 %}
+        <span class="new-badge">New</span>
+      {% elif reason %}
+        <span class="reason-badge">{{ reason }}</span>
+      {% endif %}
+    </a>
+    <div class="movie-card-body">
+      <h3 class="movie-title">
+        <a href="{{ url_for('movies.detail', movie_id=movie.movie_id) }}">{{ movie.title }}</a>
+      </h3>
+      <p class="movie-meta">{{ movie.release_year }} <span>•</span> {{ movie.genre }}</p>
+      <div class="movie-rating-line">
+        {{ stars(movie.avg_rating) }}
+        <span class="rating-count">{{ movie.rating_count }} rating{{ '' if movie.rating_count == 1 else 's' }}</span>
+      </div>
+      {% if explanation %}
+        <p class="recommendation-note"><i class="bi bi-stars"></i> {{ explanation }}</p>
+      {% endif %}
+    </div>
+  </article>
+{%- endmacro %}
+
+{% macro section_header(title, subtitle='', icon='film', tone='blue', link_url=None, link_label='View all') -%}
+  <div class="section-header">
+    <div class="d-flex align-items-center gap-3">
+      <span class="section-icon tone-{{ tone }}"><i class="bi bi-{{ icon }}"></i></span>
+      <div>
+        <h2>{{ title }}</h2>
+        {% if subtitle %}<p>{{ subtitle }}</p>{% endif %}
+      </div>
+    </div>
+    {% if link_url %}
+      <a class="section-link" href="{{ link_url }}">{{ link_label }} <i class="bi bi-arrow-right"></i></a>
+    {% endif %}
+  </div>
+{%- endmacro %}
+
+{% macro empty_state(title, text, icon='film', link_url=None, link_label=None) -%}
+  <div class="empty-state">
+    <span class="empty-icon"><i class="bi bi-{{ icon }}"></i></span>
+    <h3>{{ title }}</h3>
+    <p>{{ text }}</p>
+    {% if link_url and link_label %}
+      <a class="btn btn-brand" href="{{ link_url }}">{{ link_label }}</a>
+    {% endif %}
+  </div>
+{%- endmacro %}

@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import poster, stat_card, empty_state with context %}
+{% block title %}My Ratings · MovieScope{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">Your activity</span>
+    <h1>My ratings</h1>
+    <p>Review the scores you have given and update them at any time. Only your own ratings are shown.</p>
+  </div>
+  <a class="btn btn-brand" href="{{ url_for('movies.discover') }}"><i class="bi bi-plus-lg"></i> Rate another movie</a>
+</div>
+
+{% if ratings %}
+  <section class="stat-grid stat-grid--three">
+    {{ stat_card('Movies rated', summary.total, 'star-fill', 'gold', 'One rating per movie') }}
+    {{ stat_card('Average score given', (summary.average_given|rating) ~ ' / 10', 'graph-up-arrow', 'blue', 'Across your whole history') }}
+    {{ stat_card('Your highest score', (summary.highest ~ ' / 10') if summary.highest else '—', 'trophy', 'mint', 'Your strongest endorsement') }}
+  </section>
+
+  <div class="privacy-note">
+    <i class="bi bi-shield-lock"></i>
+    <span>Private by design: this page only queries ratings where <code>user_id = your demo profile</code>. Other users’ rating histories are never exposed.</span>
+  </div>
+
+  <section class="panel panel--table">
+    <div class="table-responsive">
+      <table class="table app-table my-ratings-table align-middle mb-0">
+        <thead>
+          <tr>
+            <th scope="col">Movie</th>
+            <th scope="col">Community</th>
+            <th scope="col">Your rating</th>
+            <th scope="col">Last updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in ratings %}
+            <tr>
+              <td>
+                <div class="table-movie-cell">
+                  {{ poster(item, 'table-poster') }}
+                  <div>
+                    <a class="table-movie" href="{{ url_for('movies.detail', movie_id=item.movie_id) }}">{{ item.title }}</a>
+                    <small>{{ item.release_year }} · {{ item.genre }}</small>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="rating-inline"><i class="bi bi-star-fill"></i> {{ item.avg_rating|rating }}</span>
+                <small class="table-subtext">{{ item.rating_count }} rating{{ '' if item.rating_count == 1 else 's' }}</small>
+              </td>
+              <td>
+                <form class="inline-rating" method="post" action="{{ url_for('ratings.update_rating') }}">
+                  <input type="hidden" name="movie_id" value="{{ item.movie_id }}">
+                  <label class="visually-hidden" for="rating-{{ item.movie_id }}">Your rating for {{ item.title }}</label>
+                  <select class="form-select form-select-sm" id="rating-{{ item.movie_id }}" name="rating" required>
+                    {% for score in range(1, 11) %}
+                      <option value="{{ score }}" {{ 'selected' if score == item.rating }}>{{ score }} / 10</option>
+                    {% endfor %}
+                  </select>
+                  <button class="btn btn-soft btn-sm" type="submit">Update</button>
+                </form>
+              </td>
+              <td>
+                <span class="date-cell">{{ item.rated_at|datefmt('%d %b %Y') }}</span>
+                <small class="table-subtext">{{ item.rated_at|datefmt('%H:%M') }}</small>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% else %}
+  {{ empty_state(
+      'You have not rated anything yet',
+      'Browse the catalogue and give a movie a score from 1 to 10. Your ratings unlock personalised, explainable recommendations.',
+      'star',
+      url_for('movies.discover'),
+      'Discover movies'
+  ) }}
+{% endif %}
+{% endblock %}

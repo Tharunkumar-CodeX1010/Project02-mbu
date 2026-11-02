@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import movie_card, stat_card, section_header, poster, stars with context %}
+{% block title %}Dashboard · MovieScope{% endblock %}
+
+{% block content %}
+<section class="hero-card">
+  <div class="hero-copy">
+    <span class="pill pill-mint"><i class="bi bi-stars"></i> Personal movie workspace</span>
+    <h1>Welcome back, {{ current_user.display_name.split(' ')[0] if current_user else 'movie fan' }}.</h1>
+    <p>Every movie has a story. Explore a curated catalogue, rate what you watch, and see exactly why each recommendation was chosen for you.</p>
+    <div class="hero-actions">
+      <a class="btn btn-brand" href="{{ url_for('movies.discover') }}"><i class="bi bi-compass"></i> Discover movies</a>
+      <a class="btn btn-ghost" href="{{ url_for('recommendations.index') }}">View recommendations <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="hero-tags">
+      <span><i class="bi bi-film"></i> {{ stats.total_movies }} films</span>
+      <span><i class="bi bi-star"></i> {{ stats.total_ratings }} ratings</span>
+      <span><i class="bi bi-people"></i> {{ stats.total_users }} demo users</span>
+    </div>
+  </div>
+  <div class="hero-art" aria-hidden="true">
+    {% if featured|length >= 3 %}
+      <a class="hero-poster hero-poster-one" href="{{ url_for('movies.detail', movie_id=featured[1].movie_id) }}" tabindex="-1">
+        {{ poster(featured[1], eager=True) }}
+      </a>
+      <a class="hero-poster hero-poster-three" href="{{ url_for('movies.detail', movie_id=featured[2].movie_id) }}" tabindex="-1">
+        {{ poster(featured[2]) }}
+      </a>
+      <a class="hero-poster hero-poster-two" href="{{ url_for('movies.detail', movie_id=featured[0].movie_id) }}" tabindex="-1">
+        {{ poster(featured[0], eager=True) }}
+        <span class="hero-poster-badge"><i class="bi bi-star-fill"></i> {{ featured[0].avg_rating|rating }}</span>
+      </a>
+    {% else %}
+      <span class="hero-reel"><i class="bi bi-film"></i></span>
+    {% endif %}
+  </div>
+</section>
+
+<section class="stat-grid">
+  {{ stat_card('Total movies', stats.total_movies, 'film', 'mint', stats.total_genres ~ ' genres in the catalogue') }}
+  {{ stat_card('Total ratings', stats.total_ratings, 'star-fill', 'gold', 'Across all demo users') }}
+  {{ stat_card('Average rating', (stats.average_rating|rating) ~ ' / 10', 'graph-up-arrow', 'blue', 'Weighted quality across every rating') }}
+  {{ stat_card('Active users', stats.total_users, 'people-fill', 'violet', 'Switch profiles from the header') }}
+</section>
+
+<div class="row g-4">
+  <div class="col-xl-8">
+    <section class="panel h-100">
+      {{ section_header('Featured movies', 'A Bayesian blend of quality and rating volume', 'award', 'gold', url_for('movies.discover'), 'Browse all') }}
+      {% if featured %}
+        <div class="movie-grid movie-grid--four">
+          {% for movie in featured %}
+            {{ movie_card(movie, eager=loop.first) }}
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state compact">
+          <p>No movies yet. Add a few titles to get started.</p>
+          <a class="btn btn-brand" href="{{ url_for('manage.index') }}">Manage movies</a>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="col-xl-4">
+    <section class="panel taste-panel h-100">
+      {{ section_header('Your taste snapshot', 'Based on your own ratings', 'person-hearts', 'violet') }}
+      {% if user_summary and user_summary.total %}
+        <div class="taste-summary">
+          <div>
+            <span class="taste-value">{{ user_summary.average_given|rating }}</span>
+            <span class="taste-label">Average given</span>
+          </div>
+          <div class="taste-divider"></div>
+          <div>
+            <span class="taste-value">{{ user_summary.total }}</span>
+            <span class="taste-label">Movies rated</span>
+          </div>
+          <div class="taste-divider"></div>
+          <div>
+            <span class="taste-value">{{ user_summary.highest }}/10</span>
+            <span class="taste-label">Top score</span>
+          </div>
+        </div>
+        <div class="mini-list">
+          {% for item in latest_ratings %}
+            <a class="mini-list-item" href="{{ url_for('movies.detail', movie_id=item.movie_id) }}">
+              {{ poster(item, 'mini-poster') }}
+              <span class="mini-copy">
+                <strong>{{ item.title }}</strong>
+                <small>{{ item.release_year }} · {{ item.genre }}</small>
+              </span>
+              <span class="mini-rating"><i class="bi bi-star-fill"></i> {{ item.rating }}/10</span>
+            </a>
+          {% endfor %}
+        </div>
+        <a class="btn btn-soft w-100" href="{{ url_for('ratings.my_ratings') }}">Manage my ratings <i class="bi bi-arrow-right"></i></a>
+      {% else %}
+        <div class="empty-state compact">
+          <span class="empty-icon small"><i class="bi bi-star"></i></span>
+          <h3>No ratings yet</h3>
+          <p>Rate a movie to start a personal taste profile.</p>
+          <a class="btn btn-brand" href="{{ url_for('movies.discover') }}">Find a movie</a>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+
+<div class="row g-4 mt-0">
+  <div class="col-xl-7">
+    <section class="panel h-100">
+      {{ section_header('Analytics preview', 'Average audience score by genre', 'bar-chart-line', 'blue', url_for('analytics.index'), 'Full analytics') }}
+      {% if genre_preview %}
+        <div class="genre-bars">
+          {% for row in genre_preview %}
+            <div class="genre-bar-row">
+              <div class="genre-bar-label">
+                <span>{{ row.genre }}</span>
+                <span>{{ row.avg_rating|rating }} / 10</span>
+              </div>
+              <div class="genre-bar-track">
+                <span style="width: {{ row.width }}%"></span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        <div class="analytics-foot">
+          <span>
+            <i class="bi bi-trophy"></i>
+            Highest rated genre:
+            <strong>{{ best_genre.genre if best_genre else '—' }}</strong>
+            {% if best_genre %}<span class="muted">({{ best_genre.avg_rating|rating }}/10)</span>{% endif %}
+          </span>
+          <span class="muted">Live from {{ stats.total_ratings }} ratings</span>
+        </div>
+      {% else %}
+        <div class="empty-state compact"><p>Rate movies to populate the genre chart.</p></div>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="col-xl-5">
+    <section class="panel h-100">
+      {{ section_header('Quick actions', 'Jump straight into the workspace', 'lightning-charge', 'coral') }}
+      <div class="quick-grid">
+        <a class="quick-action" href="{{ url_for('movies.discover') }}">
+          <span class="quick-icon tone-mint"><i class="bi bi-compass"></i></span>
+          <strong>Discover</strong>
+          <span>Search and filter the catalogue</span>
+        </a>
+        <a class="quick-action" href="{{ url_for('ratings.my_ratings') }}">
+          <span class="quick-icon tone-gold"><i class="bi bi-star"></i></span>
+          <strong>My Ratings</strong>
+          <span>Review or update your scores</span>
+        </a>
+        <a class="quick-action" href="{{ url_for('recommendations.index') }}">
+          <span class="quick-icon tone-violet"><i class="bi bi-stars"></i></span>
+          <strong>Recommendations</strong>
+          <span>See picks with clear reasons</span>
+        </a>
+        <a class="quick-action" href="{{ url_for('manage.index') }}">
+          <span class="quick-icon tone-blue"><i class="bi bi-collection-play"></i></span>
+          <strong>Manage Movies</strong>
+          <span>Add, edit or remove titles</span>
+        </a>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

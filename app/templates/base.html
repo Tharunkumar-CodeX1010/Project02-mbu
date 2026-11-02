@@ -1,0 +1,146 @@
+{% from 'partials/sidebar.html' import brand, navigation with context %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#087F69">
+  <meta name="description" content="MovieScope — discover films, rate what you watch and explore explainable recommendations.">
+  <title>{% block title %}MovieScope{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar d-none d-lg-flex">
+      {{ brand() }}
+      {{ navigation(active_page|default('')) }}
+    </aside>
+
+    <div class="offcanvas offcanvas-start mobile-sidebar" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
+      <div class="offcanvas-header">
+        <span id="mobileSidebarLabel">{{ brand() }}</span>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
+        {{ navigation(active_page|default('')) }}
+      </div>
+    </div>
+
+    <div class="app-main">
+      <header class="app-header">
+        <button class="icon-btn mobile-menu-btn d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-label="Open navigation">
+          <i class="bi bi-list"></i>
+        </button>
+
+        <form class="global-search" action="{{ url_for('movies.discover') }}" method="get" role="search" autocomplete="off" data-search-endpoint="{{ url_for('movies.search_api') }}">
+          <i class="bi bi-search search-icon" aria-hidden="true"></i>
+          <input
+            type="search"
+            id="globalSearch"
+            name="q"
+            value="{{ search|default('') }}"
+            placeholder="Search movies, genres, years…"
+            aria-label="Search movies"
+            autocomplete="off"
+          >
+          <div class="search-suggestions" id="searchSuggestions" role="listbox" hidden></div>
+        </form>
+
+        <div class="header-actions">
+          <div class="header-hint d-none d-xl-flex">
+            <i class="bi bi-database-check"></i>
+            <span>Live database</span>
+          </div>
+
+          <div class="dropdown">
+            <button class="icon-btn notif-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Your recent rating activity">
+              <i class="bi bi-bell"></i>
+              {% if recent_activity %}<span class="notif-dot" aria-hidden="true"></span>{% endif %}
+            </button>
+            <div class="dropdown-menu dropdown-menu-end activity-menu">
+              <div class="dropdown-menu-heading">
+                <span>Your recent ratings</span>
+                <span class="mini-badge">Private</span>
+              </div>
+              {% for item in recent_activity %}
+                <a class="activity-item" href="{{ url_for('movies.detail', movie_id=item.movie_id) }}">
+                  <span class="avatar avatar-sm tone-{{ ['mint', 'blue', 'violet', 'coral'][loop.index0 % 4] }}">{{ item.display_name|initials }}</span>
+                  <span class="activity-copy">
+                    <strong>{{ item.display_name }}</strong> rated <strong>{{ item.title }}</strong>
+                    <span class="activity-rating"><i class="bi bi-star-fill"></i> {{ item.rating }}/10</span>
+                    <small>{{ item.rated_at|datefmt('%d %b, %H:%M') }}</small>
+                  </span>
+                </a>
+              {% else %}
+                <p class="dropdown-empty">No ratings yet. Be the first to rate a movie.</p>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="dropdown">
+            <button class="profile-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="avatar tone-mint">{{ current_user.display_name|initials if current_user else 'MS' }}</span>
+              <span class="profile-copy d-none d-sm-flex">
+                <strong>{{ current_user.display_name if current_user else 'Demo user' }}</strong>
+                <small>Demo account</small>
+              </span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end profile-menu">
+              <div class="dropdown-menu-heading">
+                <span>Switch demo profile</span>
+                <span class="mini-badge">No login</span>
+              </div>
+              <p class="profile-note">Ratings are stored per demo user so you can demonstrate “one rating per movie” and personalised picks.</p>
+              {% for user in nav_users %}
+                <form method="post" action="{{ url_for('users.switch_user', user_id=user.user_id) }}">
+                  <input type="hidden" name="next" value="{{ request.full_path }}">
+                  <button class="profile-option {{ 'is-current' if current_user and user.user_id == current_user.user_id }}" type="submit">
+                    <span class="avatar avatar-sm tone-{{ ['mint', 'blue', 'violet', 'coral', 'gold'][loop.index0 % 5] }}">{{ user.display_name|initials }}</span>
+                    <span>{{ user.display_name }}</span>
+                    {% if current_user and user.user_id == current_user.user_id %}<i class="bi bi-check-lg"></i>{% endif %}
+                  </button>
+                </form>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="app-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-stack">
+              {% for category, message in messages %}
+                {% set tone = category if category in ['success', 'danger', 'warning', 'info'] else 'info' %}
+                <div class="alert app-alert alert-{{ tone }} alert-dismissible fade show" role="alert">
+                  <i class="bi {{ {'success': 'bi-check-circle-fill', 'danger': 'bi-exclamation-triangle-fill', 'warning': 'bi-exclamation-circle-fill', 'info': 'bi-info-circle-fill'}[tone] }}"></i>
+                  <span>{{ message }}</span>
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+
+        <footer class="app-footer">
+          <span><strong>MovieScope</strong> · Every movie has a story.</span>
+          <span>Academic prototype · Flask · MySQL · Pandas</span>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
