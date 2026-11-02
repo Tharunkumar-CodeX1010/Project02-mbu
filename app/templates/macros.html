@@ -1,7 +1,8 @@
 {% macro poster(movie, class_name='movie-poster', eager=False) -%}
   {% set fallback = url_for('static', filename='img/posters/' ~ movie.movie_id ~ '.svg') %}
+  {% set remote = movie.poster_url if movie.poster_url is string and movie.poster_url.startswith('http') else none %}
   <img
-    src="{{ movie.poster_url or fallback }}"
+    src="{{ remote or fallback }}"
     data-fallback="{{ fallback }}"
     onerror="if(!this.dataset.stage){this.dataset.stage='1';this.src=this.dataset.fallback;}else{this.onerror=null;this.src='{{ url_for('static', filename='img/poster-fallback.svg') }}';}"
     class="{{ class_name }}"

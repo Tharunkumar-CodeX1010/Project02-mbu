@@ -4,7 +4,7 @@
 
 MovieScope is a college-level, full-stack movie discovery, ratings and analytics prototype. It combines a curated MySQL catalogue with a Flask backend, Pandas/NumPy analysis, Matplotlib charts and explainable recommendations.
 
-The project is designed to be demonstrated live: it ships with 27 films, 10 demo profiles and 145 ratings, so every chart, ranking and recommendation is populated immediately after setup.
+The project is designed to be demonstrated live: it ships with 60 films, 15 demo profiles and 230 ratings, so every chart, ranking and recommendation is populated immediately after setup.
 
 ---
 
@@ -45,7 +45,7 @@ The header also includes working global search with suggestions, a private recen
 | Charts | Matplotlib (server-rendered SVG) |
 | Recommendations | scikit-learn TF-IDF + cosine similarity (optional, with genre fallback) |
 
-Bootstrap and Bootstrap Icons are vendored locally under `app/static/vendor/`, so the layout and icons work without a CDN. Poster images use TMDB URLs when online and a generated local SVG cover when an image fails or stalls.
+Bootstrap and Bootstrap Icons are vendored locally under `app/static/vendor/`, so the layout and icons work without a CDN. The first 27 films use TMDB poster URLs; every film also has a generated local SVG cover that appears when a remote image fails or stalls.
 
 ---
 
@@ -93,7 +93,7 @@ Project02-mbu/
 │       └── vendor/              # Bootstrap + Bootstrap Icons (MIT)
 ├── database/
 │   ├── schema.sql               # Tables, constraints, indexes
-│   ├── seed.sql                 # 27 movies, 10 users, 145 ratings
+│   ├── seed.sql                 # 60 movies, 15 users, 230 ratings
 │   └── init_db.py               # Creates database, schema and seed data
 ├── config.py                    # Environment-driven configuration
 ├── run.py                       # Development entry point
@@ -191,7 +191,7 @@ This connects with the credentials from `.env`, creates the `moviescope` databas
 ```text
 Database ready: moviescope
 Schema created (users, movies, ratings).
-Seeded 27 movies, 10 users and 145 ratings.
+Seeded 60 movies, 15 users and 230 ratings.
 ```
 
 > The initializer is intentionally repeatable and **destructive**: it drops and recreates the three project tables. Use `python database/init_db.py --no-seed` to create empty tables.
@@ -216,17 +216,25 @@ Open <http://127.0.0.1:5000>.
 
 ## 5. Demo profiles
 
-MovieScope is an academic prototype, so it deliberately avoids a login system. The header profile menu switches between ten seeded users. Every rating is still stored against a real `user_id`, which demonstrates personalisation and privacy.
+MovieScope is an academic prototype, so it deliberately avoids a login system. The header profile menu switches between fifteen seeded users. Every rating is still stored against a real `user_id`, which demonstrates personalisation and privacy.
 
 | User ID | Name | Purpose |
 | --- | --- | --- |
-| 1 | Aarav Sharma | Default profile, 16 ratings, Science-Fiction/Drama lean |
-| 2 | Meera Nair | Animation/Romance lean, 19 ratings |
-| 3 | Rohan Verma | Action/Crime lean |
-| 4 | Ananya Iyer | Drama/Romance lean |
-| 5 | Kabir Malhotra | Crime/Thriller lean, harsher scorer |
-| 6 | Sara Khan | Comedy/Animation lean |
-| 7–10 | Dev Patel, Nisha Rao, Arjun Menon, Priya Desai | Additional taste profiles |
+| 1 | Aarav Sharma | Default profile, 21 ratings, Science-Fiction/Drama lean |
+| 2 | Meera Nair | Animation/Romance lean, 24 ratings |
+| 3 | Rohan Verma | Action/Crime lean, 18 ratings |
+| 4 | Ananya Iyer | Drama/Romance lean, 19 ratings |
+| 5 | Kabir Malhotra | Crime/Thriller lean, harsher scorer, 13 ratings |
+| 6 | Sara Khan | Comedy/Animation lean, 18 ratings |
+| 7 | Dev Patel | Crime/Thriller lean, 23 ratings |
+| 8 | Nisha Rao | Action/Sci-Fi lean, 19 ratings |
+| 9 | Arjun Menon | Drama/Thriller lean, 19 ratings |
+| 10 | Priya Desai | Sci-Fi/Drama lean, 17 ratings |
+| 11 | Ishaan Gupta | Action/Sci-Fi lean, 8 ratings |
+| 12 | Tara Krishnan | Romance/Drama lean, 8 ratings |
+| 13 | Vikram Sethi | Crime/Thriller lean, 8 ratings |
+| 14 | Neha Joshi | Animation/Comedy lean, 8 ratings |
+| 15 | Aditya Bose | Drama/Western lean, 7 ratings |
 
 Use the profile switcher to show that **My Ratings** and the header activity panel only ever query the current profile.
 
@@ -444,7 +452,7 @@ This is a teaching prototype, not a production platform:
 
 - There is **no authentication**; demo profiles are switched intentionally from the header. A production version would use hashed passwords, server-side sessions and CSRF protection.
 - Rating history is private in the sense that queries are always scoped to the active profile; there is no admin view of other users' histories.
-- The catalogue is intentionally small (27 films) and stored in one table with a single genre per movie.
+- The catalogue is intentionally moderate (60 films) and stored in one table with a single genre per movie.
 - Recommendations are explainable heuristics, not a production machine-learning system.
 - The seed data is curated for demonstration; it is not a live film database.
 

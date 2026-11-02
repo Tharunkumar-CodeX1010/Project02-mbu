@@ -20,12 +20,17 @@ from . import analytics
 
 def _record(row, reason, explanation):
     """Convert a DataFrame row to a template-friendly recommendation."""
+    poster_url = row["poster_url"]
+    if not isinstance(poster_url, str) or not poster_url.startswith(("http://", "https://")):
+        # Pandas turns SQL NULL into NaN, which is truthy in Jinja. Normalise it
+        # so the template uses the generated local cover instead of "nan".
+        poster_url = None
     return {
         "movie_id": int(row["movie_id"]),
         "title": row["title"],
         "release_year": int(row["release_year"]),
         "genre": row["genre"],
-        "poster_url": row["poster_url"],
+        "poster_url": poster_url,
         "avg_rating": round(float(row["avg_rating"]), 1),
         "rating_count": int(row["rating_count"]),
         "weighted_score": round(float(row.get("weighted_score", 0.0)), 1),
