@@ -8,6 +8,7 @@ from flask import Flask, g, render_template, request, session
 from config import Config
 
 from .extensions import init_app as init_database
+from .posters import poster_source
 from .repositories import movies as movies_repo
 from .repositories import ratings as ratings_repo
 from .repositories import users as users_repo
@@ -71,6 +72,8 @@ def create_app(config_class=Config):
             # The error page still needs to render when MySQL is unavailable.
             pass
         return data
+
+    app.jinja_env.globals["poster_source"] = poster_source
 
     @app.template_filter("rating")
     def format_rating(value, fallback="—"):

@@ -45,7 +45,7 @@ The header also includes working global search with suggestions, a private recen
 | Charts | Matplotlib (server-rendered SVG) |
 | Recommendations | scikit-learn TF-IDF + cosine similarity (optional, with genre fallback) |
 
-Bootstrap and Bootstrap Icons are vendored locally under `app/static/vendor/`, so the layout and icons work without a CDN. The first 27 films use TMDB poster URLs; every film also has a generated local SVG cover that appears when a remote image fails or stalls.
+Bootstrap and Bootstrap Icons are vendored locally under `app/static/vendor/`, so the layout and icons work without a CDN. All 60 real posters are mirrored under `app/static/img/posters/real/`, so the catalogue renders identically online or offline. Every film also has a generated local SVG cover that appears if the bundled image is unavailable.
 
 ---
 
@@ -89,7 +89,7 @@ Project02-mbu/
 │   └── static/
 │       ├── css/style.css        # MovieScope design system
 │       ├── js/app.js            # Filters, search, modals, poster fallback
-│       ├── img/                 # Favicon, fallback poster, generated covers
+│       ├── img/                 # Favicon, fallback poster, covers, cached real posters
 │       └── vendor/              # Bootstrap + Bootstrap Icons (MIT)
 ├── database/
 │   ├── schema.sql               # Tables, constraints, indexes
@@ -440,7 +440,7 @@ Movie cards, star ratings, stat cards, section headers, empty states, filter chi
 | `Can't connect to MySQL server` | Start MySQL and confirm `DB_HOST` / `DB_PORT`; MySQL normally uses `3306`. |
 | Port 5000 already in use | Change `FLASK_PORT` in `.env` or stop the other process. |
 | Charts take a second on first load | Matplotlib imports and builds its font cache once; subsequent requests use the cache. |
-| Poster images are blank | The TMDB host may be unavailable. A local cover appears after the load error or a five-second stall. |
+| Poster images are blank | Posters are normally served from `app/static/img/posters/real/`. If a bundled file is unavailable, the app swaps in a generated SVG cover automatically. |
 | Recommendations lack personal picks | The current profile must have at least one rating. Rate a movie first. |
 | Changes to `.env` are ignored | Restart `python run.py`; configuration is loaded at startup. |
 
@@ -462,5 +462,5 @@ This is a teaching prototype, not a production platform:
 
 - [Flask](https://flask.palletsprojects.com/), [PyMySQL](https://pymysql.readthedocs.io/), [Pandas](https://pandas.pydata.org/), [NumPy](https://numpy.org/), [Matplotlib](https://matplotlib.org/), [scikit-learn](https://scikit-learn.org/)
 - [Bootstrap 5.3.3](https://getbootstrap.com/) and [Bootstrap Icons 1.11.3](https://icons.getbootstrap.com/) — MIT licenses included in `app/static/vendor/`
-- Poster artwork URLs point to [TMDB](https://www.themoviedb.org/); generated SVG covers are original MovieScope assets.
+- Poster artwork comes from [TMDB](https://www.themoviedb.org/) and is mirrored locally for reliable, offline-friendly demos; generated SVG covers are original MovieScope assets.
 - Typeface: Plus Jakarta Sans, loaded from Google Fonts with a system-font fallback.
