@@ -209,7 +209,7 @@ Open <http://127.0.0.1:5000>.
 
 ## 5. Deploy on Vercel with Neon
 
-The app runs as a Vercel Python Function and uses Neon PostgreSQL. Vercel serves the static files from its CDN; the build step copies the bundled assets into `public/static`. The current production deployment is available at <https://moviescope-livid.vercel.app/>.
+The app runs as a Vercel Python Function in Singapore (`sin1`), close to the Neon database, to reduce database round-trip time. Vercel serves the static files from its CDN; the build step copies the bundled assets into `public/static`. The current production deployment is available at <https://moviescope-livid.vercel.app/>.
 
 1. Create a free Neon project and copy its pooled PostgreSQL connection string. Keep the `sslmode=require` parameter in the URL.
 2. Set `DATABASE_URL` in your local `.env`, then run `python database/init_db.py` once to create the schema and sample data in Neon.
