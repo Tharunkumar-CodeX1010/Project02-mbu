@@ -209,21 +209,21 @@ Open <http://127.0.0.1:5000>.
 
 ## 5. Deploy on Vercel with Neon
 
-The app runs as a Vercel Python Function and uses Neon PostgreSQL. Vercel serves the static files from its CDN; the build step copies the bundled assets into `public/static`.
+The app runs as a Vercel Python Function and uses Neon PostgreSQL. Vercel serves the static files from its CDN; the build step copies the bundled assets into `public/static`. The current production deployment is available at <https://moviescope-livid.vercel.app/>.
 
 1. Create a free Neon project and copy its pooled PostgreSQL connection string. Keep the `sslmode=require` parameter in the URL.
 2. Set `DATABASE_URL` in your local `.env`, then run `python database/init_db.py` once to create the schema and sample data in Neon.
-3. Push this repository to GitHub, then import it in Vercel. The repository root should contain `index.py`, `requirements.txt`, and `pyproject.toml`; leave the build and output settings at their defaults.
+3. Push this repository to GitHub, then import it in Vercel. The repository root should contain `index.py`, `requirements.txt`, and `pyproject.toml`; leave the build and output settings at their defaults. Automatic deployments require the GitHub account connected to Vercel to have access to this repository. If Vercel cannot import or connect the repository, ask its owner to grant the Vercel GitHub App access to it.
 4. In Vercel project settings, add these environment variables for Production and Preview:
    - `DATABASE_URL`: the Neon connection string
    - `SECRET_KEY`: a newly generated value from `python -c "import secrets; print(secrets.token_hex(32))"`
    - `DEMO_USER_ID`: `1` (optional; defaults to `1`)
    - `MIN_RATING_COUNT`: `10` (optional; defaults to `10`)
-5. Redeploy and open the deployment URL.
+5. Redeploy and open the deployment URL. If Git integration is not connected, run `vercel link` once in the repository and then run `vercel --prod` after each update.
 
-Do not commit `.env` or paste database credentials into source files. The app expects the Neon schema to be initialised before the first deployment; database setup is a one-time command, not part of each Vercel build.
+Do not commit `.env` or paste database credentials into source files. The app expects the Neon schema to be initialised before the first deployment; database setup is a one-time command, not part of each Vercel build. The current deployment uses the Vercel Hobby team and the connected Neon project; verify the providers' current usage quotas before relying on free-tier limits.
 
-Neon and Vercel offer free tiers, but quotas and free-plan terms can change. Staying within those plans is free; usage beyond the current included limits may require payment. Check the providers' pricing pages before deployment.
+Neon and Vercel free-tier quotas and plan terms can change. Usage beyond the current included limits may require payment, so check the providers' pricing pages before deployment.
 
 ---
 
