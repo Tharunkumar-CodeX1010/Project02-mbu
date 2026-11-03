@@ -19,7 +19,7 @@ REAL_POSTER_SUFFIXES = (".jpg", ".jpeg", ".png", ".webp")
 
 
 def _value(movie, key):
-    """Templates receive dict rows from MySQL and dicts from the analysis layer."""
+    """Templates receive dict rows from PostgreSQL and dicts from analysis."""
     if isinstance(movie, dict):
         return movie.get(key)
     return getattr(movie, key, None)

@@ -17,16 +17,19 @@ def _env_int(name: str, default: int) -> int:
 
 
 class Config:
-    """Default configuration for the MovieScope prototype."""
+    """Default configuration for MovieScope."""
 
-    SECRET_KEY = os.getenv("SECRET_KEY", "moviescope-dev-secret-change-me")
+    SECRET_KEY = os.getenv("SECRET_KEY")
+    if not SECRET_KEY:
+        if os.getenv("VERCEL") == "1":
+            raise RuntimeError("Set SECRET_KEY in the Vercel project environment.")
+        SECRET_KEY = "moviescope-dev-secret-change-me"
 
-    # MySQL connection
-    DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
-    DB_PORT = _env_int("DB_PORT", 3306)
-    DB_USER = os.getenv("DB_USER", "root")
-    DB_PASSWORD = os.getenv("DB_PASSWORD", "")
-    DB_NAME = os.getenv("DB_NAME", "moviescope")
+    # PostgreSQL connection string (Neon provides this as DATABASE_URL).
+    DATABASE_URL = os.getenv("DATABASE_URL", "")
+    SESSION_COOKIE_SECURE = os.getenv("VERCEL") == "1"
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
 
     # Demo session: the app ships without authentication and uses a seeded user.
     DEMO_USER_ID = _env_int("DEMO_USER_ID", 1)

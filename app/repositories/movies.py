@@ -37,7 +37,7 @@ def list_movies(search=None, genre=None, year=None, sort="rating", limit=None):
     params = []
 
     if search:
-        where.append("m.title LIKE %s")
+        where.append("m.title ILIKE %s")
         params.append(f"%{search}%")
     if genre:
         where.append("m.genre = %s")
@@ -77,6 +77,7 @@ def create_movie(data):
         """
         INSERT INTO movies (title, release_year, genre, poster_url)
         VALUES (%s, %s, %s, %s)
+        RETURNING movie_id
         """,
         (data["title"], data["release_year"], data["genre"], data["poster_url"]),
     )
@@ -120,7 +121,7 @@ def search_titles(term, limit=5):
         """
         SELECT movie_id, title, release_year, genre, poster_url
         FROM movies
-        WHERE title LIKE %s
+        WHERE title ILIKE %s
         ORDER BY title ASC
         LIMIT %s
         """,

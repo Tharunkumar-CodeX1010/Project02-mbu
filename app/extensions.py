@@ -1,28 +1,24 @@
-"""Small database helpers shared by the repositories.
+"""Small PostgreSQL helpers shared by the repositories.
 
-A new PyMySQL connection is opened per request and closed automatically when
+A new psycopg connection is opened per request and closed automatically when
 the request ends. All callers receive dictionary rows, which keeps templates
 and the Pandas layer simple to work with.
 """
 
-import pymysql
+import psycopg
 from flask import current_app, g
-from pymysql.cursors import DictCursor
+from psycopg.rows import dict_row
 
 
 def get_db():
     """Return (and lazily create) the connection for the current request."""
     if "db" not in g:
-        g.db = pymysql.connect(
-            host=current_app.config["DB_HOST"],
-            port=current_app.config["DB_PORT"],
-            user=current_app.config["DB_USER"],
-            password=current_app.config["DB_PASSWORD"],
-            database=current_app.config["DB_NAME"],
-            charset="utf8mb4",
-            cursorclass=DictCursor,
+        g.db = psycopg.connect(
+            current_app.config["DATABASE_URL"],
+            row_factory=dict_row,
             autocommit=False,
             connect_timeout=5,
+            prepare_threshold=None,
         )
     return g.db
 
@@ -54,10 +50,10 @@ def query_one(sql, params=None):
 
 
 def execute(sql, params=None):
-    """Run a write statement and commit it. Returns lastrowid."""
+    """Run a write statement and commit it, returning a requested id if present."""
     db = get_db()
     with db.cursor() as cursor:
         cursor.execute(sql, params or ())
-        row_id = cursor.lastrowid
+        row = cursor.fetchone() if cursor.description else None
     db.commit()
-    return row_id
+    return next(iter(row.values())) if row else None

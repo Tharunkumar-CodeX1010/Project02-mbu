@@ -6,8 +6,12 @@ underlying ratings/movies change.
 """
 
 from io import BytesIO
+import os
 
 import matplotlib
+
+if os.getenv("VERCEL") == "1":
+    os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib")
 
 matplotlib.use("Agg")
 

@@ -2,7 +2,7 @@
 
 **Every movie has a story.**
 
-MovieScope is a college-level, full-stack movie discovery, ratings and analytics prototype. It combines a curated MySQL catalogue with a Flask backend, Pandas/NumPy analysis, Matplotlib charts and explainable recommendations.
+MovieScope is a college-level, full-stack movie discovery, ratings and analytics prototype. It combines a curated PostgreSQL catalogue with a Flask backend, Pandas/NumPy analysis, Matplotlib charts and explainable recommendations.
 
 The project is designed to be demonstrated live: it ships with 60 films, 15 demo profiles and 230 ratings, so every chart, ranking and recommendation is populated immediately after setup.
 
@@ -18,7 +18,7 @@ MovieScope has seven connected pages:
 | **Discover Movies** (`/discover`) | Search by title, filter by genre and release year, and sort by rating, popularity, year or title. All controls combine. |
 | **Movie Details** (`/movies/<id>`) | View poster, metadata, community average, rating count, a 1–10 distribution and similar movies. Submit or update a rating. |
 | **Recommendations** (`/recommendations`) | Get content-based personal picks, Bayesian-popular picks, top-rated films and genre suggestions — each with a written explanation. |
-| **Analytics** (`/analytics`) | Explore four Matplotlib charts plus leaderboards calculated from live MySQL data. |
+| **Analytics** (`/analytics`) | Explore four Matplotlib charts plus leaderboards calculated from live PostgreSQL data. |
 | **Manage Movies** (`/manage`) | Search, add, edit and delete catalogue entries with validation and a confirmation dialog before deletion. |
 | **My Ratings** (`/my-ratings`) | Review and update only the current demo profile's ratings. |
 
@@ -30,7 +30,7 @@ The header also includes working global search with suggestions, a private recen
 - Submitting a rating again updates it instead of creating a duplicate.
 - Ratings are validated in the browser (radio input required) and on the server (integer 1–10).
 - Deleting a movie cascades to its ratings, after explicit confirmation.
-- Dashboard and analytics values come from MySQL — nothing is hardcoded.
+- Dashboard and analytics values come from PostgreSQL — nothing is hardcoded.
 
 ---
 
@@ -40,7 +40,7 @@ The header also includes working global search with suggestions, a private recen
 | --- | --- |
 | Frontend | HTML5, CSS3, JavaScript, Bootstrap 5.3.3, Bootstrap Icons |
 | Backend | Python, Flask 3 |
-| Database | MySQL 8, PyMySQL |
+| Database | PostgreSQL, Neon, psycopg 3 |
 | Analysis | Pandas, NumPy |
 | Charts | Matplotlib (server-rendered SVG) |
 | Recommendations | scikit-learn TF-IDF + cosine similarity (optional, with genre fallback) |
@@ -55,7 +55,7 @@ Bootstrap and Bootstrap Icons are vendored locally under `app/static/vendor/`, s
 Project02-mbu/
 ├── app/
 │   ├── __init__.py              # Flask app factory, request user, filters, errors
-│   ├── extensions.py            # Request-scoped PyMySQL connection helpers
+│   ├── extensions.py            # Request-scoped PostgreSQL connection helpers
 │   ├── blueprints/
 │   │   ├── dashboard.py         # Dashboard route
 │   │   ├── movies.py            # Discover, details, search API
@@ -97,7 +97,11 @@ Project02-mbu/
 │   └── init_db.py               # Creates database, schema and seed data
 ├── config.py                    # Environment-driven configuration
 ├── run.py                       # Development entry point
+├── index.py                     # Vercel Flask entry point
+├── vercel.json                  # Vercel project configuration
 ├── requirements.txt
+├── pyproject.toml               # Vercel Python runtime/build settings
+├── scripts/prepare_vercel.py    # Copies static assets to Vercel's public directory
 ├── .env.example
 ├── .gitignore
 └── README.md
@@ -116,8 +120,8 @@ The separation is deliberate:
 
 ### Prerequisites
 
-- Python 3.10 or newer
-- MySQL 8.x running locally
+- Python 3.12
+- A PostgreSQL database (Neon is supported)
 - `pip`
 
 ### Step 1 — Create a virtual environment
@@ -142,7 +146,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-`scikit-learn` is listed because the personal recommendation section uses TF-IDF. If it is unavailable, the app automatically falls back to genre affinity — the page still works.
+`scikit-learn` powers the optional TF-IDF recommendation path. If it is unavailable, the app automatically falls back to genre affinity — the page still works.
 
 ### Step 3 — Configure the environment
 
@@ -160,19 +164,15 @@ copy .env.example .env
 cp .env.example .env
 ```
 
-Edit `.env` with your MySQL credentials:
+Edit `.env` and set your PostgreSQL connection string:
 
 ```dotenv
-SECRET_KEY=replace-with-a-random-secret
+SECRET_KEY=generate-a-random-secret
 FLASK_HOST=127.0.0.1
 FLASK_PORT=5000
 FLASK_DEBUG=1
 
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=your-mysql-password
-DB_NAME=moviescope
+DATABASE_URL=postgresql://user:password@host/database?sslmode=require
 
 DEMO_USER_ID=1
 MIN_RATING_COUNT=10
@@ -180,29 +180,22 @@ MIN_RATING_COUNT=10
 
 `.env` is git-ignored. Only `.env.example` is committed.
 
+Generate a secret locally with `python -c "import secrets; print(secrets.token_hex(32))"`.
+
 ### Step 4 — Initialise the database
 
 ```bash
 python database/init_db.py
 ```
 
-This connects with the credentials from `.env`, creates the `moviescope` database if needed, rebuilds the three tables and loads the demo data. Expected output:
+This connects to the database in `DATABASE_URL`, creates the three tables if needed, and loads the demo data without deleting existing rows. Expected output:
 
 ```text
-Database ready: moviescope
-Schema created (users, movies, ratings).
-Seeded 60 movies, 15 users and 230 ratings.
+Schema ready (users, movies, ratings).
+Demo data ready: 60 movies, 15 users and 230 ratings.
 ```
 
-> The initializer is intentionally repeatable and **destructive**: it drops and recreates the three project tables. Use `python database/init_db.py --no-seed` to create empty tables.
-
-Manual alternative:
-
-```bash
-mysql -u root -p -e "CREATE DATABASE moviescope CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mysql -u root -p moviescope < database/schema.sql
-mysql -u root -p moviescope < database/seed.sql
-```
+Use `python database/init_db.py --no-seed` to create empty tables. Re-running the initializer does not delete existing data or duplicate the bundled seed rows.
 
 ### Step 5 — Run the app
 
@@ -214,7 +207,27 @@ Open <http://127.0.0.1:5000>.
 
 ---
 
-## 5. Demo profiles
+## 5. Deploy on Vercel with Neon
+
+The app runs as a Vercel Python Function and uses Neon PostgreSQL. Vercel serves the static files from its CDN; the build step copies the bundled assets into `public/static`.
+
+1. Create a free Neon project and copy its pooled PostgreSQL connection string. Keep the `sslmode=require` parameter in the URL.
+2. Set `DATABASE_URL` in your local `.env`, then run `python database/init_db.py` once to create the schema and sample data in Neon.
+3. Push this repository to GitHub, then import it in Vercel. The repository root should contain `index.py`, `requirements.txt`, and `pyproject.toml`; leave the build and output settings at their defaults.
+4. In Vercel project settings, add these environment variables for Production and Preview:
+   - `DATABASE_URL`: the Neon connection string
+   - `SECRET_KEY`: a newly generated value from `python -c "import secrets; print(secrets.token_hex(32))"`
+   - `DEMO_USER_ID`: `1` (optional; defaults to `1`)
+   - `MIN_RATING_COUNT`: `10` (optional; defaults to `10`)
+5. Redeploy and open the deployment URL.
+
+Do not commit `.env` or paste database credentials into source files. The app expects the Neon schema to be initialised before the first deployment; database setup is a one-time command, not part of each Vercel build.
+
+Neon and Vercel offer free tiers, but quotas and free-plan terms can change. Staying within those plans is free; usage beyond the current included limits may require payment. Check the providers' pricing pages before deployment.
+
+---
+
+## 6. Demo profiles
 
 MovieScope is an academic prototype, so it deliberately avoids a login system. The header profile menu switches between fifteen seeded users. Every rating is still stored against a real `user_id`, which demonstrates personalisation and privacy.
 
@@ -240,30 +253,30 @@ Use the profile switcher to show that **My Ratings** and the header activity pan
 
 ---
 
-## 6. Database design
+## 7. Database design
 
 ```sql
 users (
-    user_id INT UNSIGNED PK AUTO_INCREMENT,
+    user_id INTEGER PK GENERATED BY DEFAULT AS IDENTITY,
     display_name VARCHAR(80) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
 
 movies (
-    movie_id INT UNSIGNED PK AUTO_INCREMENT,
+    movie_id INTEGER PK GENERATED BY DEFAULT AS IDENTITY,
     title VARCHAR(150) NOT NULL,
-    release_year SMALLINT UNSIGNED NOT NULL,
+    release_year SMALLINT NOT NULL,
     genre VARCHAR(40) NOT NULL,
     poster_url VARCHAR(500) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
 
 ratings (
-    rating_id INT UNSIGNED PK AUTO_INCREMENT,
-    user_id INT UNSIGNED NOT NULL,
-    movie_id INT UNSIGNED NOT NULL,
-    rating TINYINT UNSIGNED NOT NULL,
-    rated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    rating_id INTEGER PK GENERATED BY DEFAULT AS IDENTITY,
+    user_id INTEGER NOT NULL,
+    movie_id INTEGER NOT NULL,
+    rating SMALLINT NOT NULL,
+    rated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     UNIQUE KEY uq_ratings_user_movie (user_id, movie_id),
     FOREIGN KEY (user_id) REFERENCES users(user_id)
@@ -283,21 +296,20 @@ Additional safeguards:
 
 ### Query safety
 
-- Every user value is passed through PyMySQL placeholders (`%s`).
+- Every user value is passed through psycopg placeholders (`%s`).
 - Sort choices are mapped through a fixed allow-list in `app/repositories/movies.py`; user input never becomes SQL.
-- The database name in `init_db.py` is validated against `[A-Za-z0-9_]+` before being used in `CREATE DATABASE`.
 - Genre values are validated against the application's configured genre list.
 - Poster URLs must be `http://` or `https://` links.
 
 ---
 
-## 7. Algorithms explained
+## 8. Algorithms explained
 
-### 7.1 Rating aggregation
+### 8.1 Rating aggregation
 
 Average rating and rating count are calculated with SQL `AVG()`/`COUNT()` in the repository layer. The resulting rows are converted to typed Pandas DataFrames for ranking and charting.
 
-### 7.2 Bayesian weighted rating
+### 8.2 Bayesian weighted rating
 
 Popularity lists use the weighted rating formula:
 
@@ -322,11 +334,11 @@ WR = (4 / 14) × 9.5 + (10 / 14) × 8.1 = 2.71 + 5.79 = 8.50
 
 The same formula powers the dashboard's featured movies and the “Popular now” recommendation section.
 
-### 7.3 Top-rated ranking
+### 8.3 Top-rated ranking
 
 Top-rated lists require at least three ratings (`TOP_RATED_MIN_COUNT`) to avoid a single enthusiastic score dominating the leaderboard. Remaining ties are broken by rating count.
 
-### 7.4 Genre-based recommendations
+### 8.4 Genre-based recommendations
 
 The user's highest-rated genre is calculated from their own rating history:
 
@@ -341,7 +353,7 @@ LIMIT 1
 
 Movies from that genre are then ranked by weighted score, and movies the user has already rated are removed. A visitor can override the automatic choice with the genre pills on the page.
 
-### 7.5 Content similarity (TF-IDF + cosine)
+### 8.5 Content similarity (TF-IDF + cosine)
 
 For “Picked for you” and “More like this”:
 
@@ -354,15 +366,15 @@ For “Picked for you” and “More like this”:
 
 If scikit-learn is missing or the corpus is too small, the service falls back to the user's preferred genre, so the page never fails.
 
-### 7.6 Analytics and chart caching
+### 8.6 Analytics and chart caching
 
 Matplotlib runs with the `Agg` backend and renders four SVGs: rating distribution, average rating by genre, top-rated movies and rating volume. Genres are calculated from individual ratings (not by averaging movie averages).
 
-Generated charts are cached in memory until the underlying data changes. The cache signature includes rating count, rating sum, latest rating timestamp, movie count and a CRC32 signature of movie titles/years/genres.
+Generated charts are cached in memory until the underlying data changes. The cache signature includes rating count, rating sum, latest rating timestamp, movie count and a PostgreSQL hash signature of movie titles/years/genres.
 
 ---
 
-## 8. Design system
+## 9. Design system
 
 The interface follows the supplied MovieScope direction: a light cinema/SaaS workspace with a fixed sidebar, sticky white header, reusable cards, restrained shadows and a consistent 8px spacing rhythm.
 
@@ -397,7 +409,7 @@ Movie cards, star ratings, stat cards, section headers, empty states, filter chi
 
 ---
 
-## 9. Routes
+## 10. Routes
 
 | Method | Route | Purpose |
 | --- | --- | --- |
@@ -419,9 +431,9 @@ Movie cards, star ratings, stat cards, section headers, empty states, filter chi
 
 ---
 
-## 10. Suggested viva walkthrough
+## 11. Suggested viva walkthrough
 
-1. **Dashboard:** point out that totals come from MySQL; open a featured movie.
+1. **Dashboard:** point out that totals come from PostgreSQL; open a featured movie.
 2. **Discover:** combine `genre = Sci-Fi`, `year = 2014`, `sort = highest rating`; note that the URL carries all filters.
 3. **Movie Details:** rate the film 9/10, then submit again with a different score to show the update-in-place behaviour and the distribution changing.
 4. **Recommendations:** switch from “Auto · my taste” to another genre; hover the explanation notes.
@@ -431,22 +443,21 @@ Movie cards, star ratings, stat cards, section headers, empty states, filter chi
 
 ---
 
-## 11. Troubleshooting
+## 12. Troubleshooting
 
 | Problem | Fix |
 | --- | --- |
-| `ERROR 1045 (28000): Access denied` | Your `DB_USER` / `DB_PASSWORD` in `.env` are wrong. |
-| `Unknown database 'moviescope'` | Run `python database/init_db.py`. |
-| `Can't connect to MySQL server` | Start MySQL and confirm `DB_HOST` / `DB_PORT`; MySQL normally uses `3306`. |
+| PostgreSQL authentication/connection error | Check `DATABASE_URL`, including its password and `sslmode=require` parameter. |
+| Empty or missing tables | Set `DATABASE_URL`, then run `python database/init_db.py`. |
 | Port 5000 already in use | Change `FLASK_PORT` in `.env` or stop the other process. |
 | Charts take a second on first load | Matplotlib imports and builds its font cache once; subsequent requests use the cache. |
-| Poster images are blank | Posters are normally served from `app/static/img/posters/real/`. If a bundled file is unavailable, the app swaps in a generated SVG cover automatically. |
+| Poster images are blank | Locally, posters are served from `app/static/`; Vercel serves the generated `public/static/` assets from its CDN. |
 | Recommendations lack personal picks | The current profile must have at least one rating. Rate a movie first. |
 | Changes to `.env` are ignored | Restart `python run.py`; configuration is loaded at startup. |
 
 ---
 
-## 12. Academic scope and limitations
+## 13. Academic scope and limitations
 
 This is a teaching prototype, not a production platform:
 
@@ -458,9 +469,9 @@ This is a teaching prototype, not a production platform:
 
 ---
 
-## 13. Credits
+## 14. Credits
 
-- [Flask](https://flask.palletsprojects.com/), [PyMySQL](https://pymysql.readthedocs.io/), [Pandas](https://pandas.pydata.org/), [NumPy](https://numpy.org/), [Matplotlib](https://matplotlib.org/), [scikit-learn](https://scikit-learn.org/)
+- [Flask](https://flask.palletsprojects.com/), [psycopg](https://www.psycopg.org/), [Pandas](https://pandas.pydata.org/), [NumPy](https://numpy.org/), [Matplotlib](https://matplotlib.org/), [scikit-learn](https://scikit-learn.org/)
 - [Bootstrap 5.3.3](https://getbootstrap.com/) and [Bootstrap Icons 1.11.3](https://icons.getbootstrap.com/) — MIT licenses included in `app/static/vendor/`
 - Poster artwork comes from [TMDB](https://www.themoviedb.org/) and is mirrored locally for reliable, offline-friendly demos; generated SVG covers are original MovieScope assets.
 - Typeface: Plus Jakarta Sans, loaded from Google Fonts with a system-font fallback.

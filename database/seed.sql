@@ -17,7 +17,8 @@ INSERT INTO users (user_id, display_name) VALUES
     (12, 'Tara Krishnan'),
     (13, 'Vikram Sethi'),
     (14, 'Neha Joshi'),
-    (15, 'Aditya Bose');
+    (15, 'Aditya Bose')
+ON CONFLICT (user_id) DO NOTHING;
 
 INSERT INTO movies (movie_id, title, release_year, genre, poster_url) VALUES
     (1, 'The Shawshank Redemption', 1994, 'Drama', 'https://image.tmdb.org/t/p/w500/9cqNxx0GxF0bflZmeSMuL5tnGzr.jpg'),
@@ -79,7 +80,8 @@ INSERT INTO movies (movie_id, title, release_year, genre, poster_url) VALUES
     (57, 'Toy Story', 1995, 'Animation', 'https://image.tmdb.org/t/p/w500/uXDfjJbdP4ijW5hWSBrPrlKpxab.jpg'),
     (58, 'WALL-E', 2008, 'Animation', 'https://image.tmdb.org/t/p/w500/hbhFnRzzg6ZDmm8YAmxBnQpQIPh.jpg'),
     (59, 'How to Train Your Dragon', 2010, 'Animation', 'https://image.tmdb.org/t/p/w500/ygGmAO60t8GyqUo9xYeYxSZAR3b.jpg'),
-    (60, 'Inside Out', 2015, 'Animation', 'https://image.tmdb.org/t/p/w500/2H1TmgdfNtsKlU9jKdeNyYL5y8T.jpg');
+    (60, 'Inside Out', 2015, 'Animation', 'https://image.tmdb.org/t/p/w500/2H1TmgdfNtsKlU9jKdeNyYL5y8T.jpg')
+ON CONFLICT (movie_id) DO NOTHING;
 
 
 INSERT INTO ratings (user_id, movie_id, rating, rated_at) VALUES
@@ -312,4 +314,5 @@ INSERT INTO ratings (user_id, movie_id, rating, rated_at) VALUES
     (11, 30, 7, '2026-11-01 19:27:23'),
     (12, 37, 6, '2026-11-01 23:23:52'),
     (13, 44, 6, '2026-11-02 02:57:16'),
-    (14, 51, 10, '2026-11-02 06:31:05');
+    (14, 51, 10, '2026-11-02 06:31:05')
+ON CONFLICT (user_id, movie_id) DO NOTHING;

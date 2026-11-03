@@ -2,7 +2,7 @@
 
 from datetime import date
 
-import pymysql
+import psycopg
 from flask import Flask, g, render_template, request, session
 
 from config import Config
@@ -68,8 +68,8 @@ def create_app(config_class=Config):
                 data["recent_activity"] = ratings_repo.recent_user_activity(
                     current["user_id"], 4
                 )
-        except pymysql.MySQLError:
-            # The error page still needs to render when MySQL is unavailable.
+        except psycopg.Error:
+            # The error page still needs to render when PostgreSQL is unavailable.
             pass
         return data
 
@@ -120,7 +120,7 @@ def create_app(config_class=Config):
             500,
         )
 
-    @app.errorhandler(pymysql.MySQLError)
+    @app.errorhandler(psycopg.Error)
     def database_error(error):
         app.logger.error("Database error: %s", error)
         return (
@@ -129,14 +129,10 @@ def create_app(config_class=Config):
                 code=503,
                 title="Database unavailable",
                 message=(
-                    "MovieScope could not reach MySQL. Make sure the database is "
-                    "running, then check your .env settings and initialise the data."
+                    "MovieScope could not reach PostgreSQL. Check DATABASE_URL "
+                    "and make sure the database has been initialised."
                 ),
                 show_setup=True,
-                db_host=app.config["DB_HOST"],
-                db_port=app.config["DB_PORT"],
-                db_name=app.config["DB_NAME"],
-                db_user=app.config["DB_USER"],
             ),
             503,
         )

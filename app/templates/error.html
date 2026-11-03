@@ -31,9 +31,8 @@
 
       {% if show_setup %}
         <div class="setup-box">
-          <h2>Connection details</h2>
-          <p>Host <code>{{ db_host }}:{{ db_port }}</code> · Database <code>{{ db_name }}</code> · User <code>{{ db_user }}</code></p>
-          <p>Create a <code>.env</code> from <code>.env.example</code> with your MySQL password, then run:</p>
+          <h2>Database setup</h2>
+          <p>Set <code>DATABASE_URL</code> to your PostgreSQL connection string, then initialise the schema and demo data:</p>
           <code>python database/init_db.py</code>
         </div>
       {% endif %}

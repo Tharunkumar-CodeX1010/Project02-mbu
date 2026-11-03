@@ -20,8 +20,8 @@ def upsert_rating(user_id, movie_id, rating):
         """
         INSERT INTO ratings (user_id, movie_id, rating)
         VALUES (%s, %s, %s)
-        ON DUPLICATE KEY UPDATE
-            rating = VALUES(rating),
+        ON CONFLICT (user_id, movie_id) DO UPDATE SET
+            rating = EXCLUDED.rating,
             rated_at = CURRENT_TIMESTAMP
         """,
         (user_id, movie_id, rating),
@@ -124,9 +124,9 @@ def data_version():
             (SELECT COUNT(*) FROM ratings) AS rating_count,
             (SELECT COALESCE(SUM(rating), 0) FROM ratings) AS rating_sum,
             (SELECT COUNT(*) FROM movies) AS movie_count,
-            (SELECT COALESCE(MAX(rated_at), '1970-01-01') FROM ratings) AS latest,
+            (SELECT COALESCE(MAX(rated_at), TIMESTAMP '1970-01-01') FROM ratings) AS latest,
             (SELECT COALESCE(
-                SUM(CRC32(CONCAT_WS('|', title, release_year, genre))), 0
+                SUM(hashtextextended(CONCAT_WS('|', title, release_year, genre), 0)), 0
              ) FROM movies) AS movie_signature
         """
     )
